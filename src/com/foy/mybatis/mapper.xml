@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- mapper 태그의 namespace 속성 필수 작성 -->
+<mapper namespace="foreverYoung">
+
+	<!-- 회원가입 -->
+	<insert id="join" parameterType="com.foy.vo.UserVO">
+		INSERT INTO CUSTOMER
+		(USER_ID,
+		USER_PW, USER_NAME, USER_ADDR, USER_PHONE, USER_EMAIL, USER_GRADE, USER_POINT ,USER_COUPON_CNT ,USER_TOT_PUR)
+		VALUES
+		(#{user_id}, #{user_pw}, #{user_name}, #{user_addr}, #{user_phone},
+		#{user_email},'WELCOME', 0 ,0 ,0)
+	</insert>
+
+	<!-- 로그인 -->
+	<select id="one" resultType="com.foy.vo.CustomerVO"
+		parameterType="string">
+		SELECT * FROM CUSTOMER WHERE USER_ID = #{user_id} AND
+									 USER_PW = #{user_pw}
+	</select>
+	
+	<!--비밀번호 널 체크 -->
+	<select id="pwchk" resultType="String" parameterType="String" >
+		SELECT USER_PW FROM CUSTOMER WHERE USER_ID = #{user_id}
+	</select>
+
+
+
+	<!-- 게시판 전체건수 조회 -->
+	<select id="b_totalCount" resultType="int">
+		SELECT COUNT(B_IDX) FROM
+		BOARD
+	</select>
+
+	<!-- 상품정보에 해당하는 게시판 전체건수 조회 -->
+	<select id="product_b_totalCount" resultType="int">
+		SELECT COUNT(B_IDX)
+		FROM BOARD WHERE P_NO = #{p_no}
+	</select>
+
+	<!-- 페이지에 표시할 게시글 조회 -->
+	<select id="bList" resultType="com.foy.vo.BoardVO"
+		parameterType="Map">
+		SELECT R_NUM, B_IDX, B_SUBJECT, B_WRITER, B_CONTENT,
+		B_FILE_NAME, B_PWD, B_WRITE_DATE, B_HIT
+		FROM (SELECT ROWNUM R_NUM, B.*
+		FROM (SELECT *
+		FROM BOARD
+		ORDER BY B_IDX DESC
+		) B
+		)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+	<!-- 상품 상세페이지에 표시할 게시글 조회 -->
+	<select id="bListforProduct" resultType="com.foy.vo.BoardVO">
+		SELECT R_NUM, B_IDX,
+		B_SUBJECT, B_WRITER, B_CONTENT,
+		B_FILE_NAME, B_PWD, B_WRITE_DATE, B_HIT, B_ORI_NAME, P_NO, USER_GRADE, STAR, GOOD, BAD
+		FROM (SELECT ROWNUM R_NUM, B.*
+		FROM (SELECT *
+		FROM BOARD WHERE P_NO = #{p_no}
+		ORDER BY B_IDX DESC
+		) B
+		)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+	<!-- 게시글 하나 조회 -->
+	<select id="bOne" resultType="com.foy.vo.BoardVO"
+		parameterType="string">
+		SELECT * FROM BOARD WHERE B_IDX = #{b_idx}
+	</select>
+
+	<!-- 게시글(BBS_T) 등록 -->
+	<insert id="b_write" parameterType="com.foy.vo.BoardVO">
+		INSERT INTO BOARD
+		(B_IDX, B_WRITER, B_CONTENT, B_FILE_NAME, B_PWD, B_WRITE_DATE,
+		B_HIT, B_ORI_NAME, P_NO, USER_GRADE, STAR, GOOD, BAD)
+		VALUES (BOARD_SEQ.NEXTVAL,
+		#{b_writer}, #{b_content}, #{b_file_name}, #{b_pwd}, SYSDATE, 0,
+		#{b_ori_name}, #{p_no}, #{user_grade}, #{star}, 0, 0)
+	</insert>
+
+	<!-- 조회수 수정(1증가) -->
+	<update id="hitVO" parameterType="com.foy.vo.BoardVO">
+		UPDATE BOARD SET B_HIT =
+		#{b_hit} + 1 WHERE B_IDX = #{b_idx}
+	</update>
+
+	<update id="hit" parameterType="int">
+		UPDATE BOARD SET B_HIT = B_HIT +
+		1 WHERE B_IDX = #{b_idx}
+	</update>
+
+	<!-- 게시글 수정 -->
+	<update id="b_modify" parameterType="com.foy.vo.BoardVO">
+		UPDATE BOARD
+		SET B_WRITER= #{b_writer},
+		B_CONTENT= #{b_content}, B_FILE_NAME= #{b_file_name},
+		B_WRITE_DATE=SYSDATE, USER_GRADE = #{user_grade}, STAR = #{star}, B_ORI_NAME = #{b_ori_name}
+		WHERE B_IDX = #{b_idx}
+	</update>
+
+	<!-- 게시글 삭제 -->
+	<delete id="b_delete" parameterType="String">
+		DELETE FROM BOARD WHERE
+		B_IDX = #{b_idx}
+	</delete>
+
+
+	<!-- 물건 등록 -->
+	<insert id="regProduct" parameterType="com.foy.vo.ProductVO">
+		INSERT INTO PRODUCT
+		VALUES(PRODUCT_SEQ.NEXTVAL, #{p_no}, #{p_name},
+		#{p_price},
+		#{p_saleprice}, #{p_ori_image}, #{p_content}, #{p_category},
+		#{p_new_image}, #{p_salerate})
+	</insert>
+
+	<!--물건 전체 리스트 -->
+	<select id="product_tot_list" resultType="com.foy.vo.ProductVO">
+		<!-- SELECT * FROM PRODUCT ORDER BY P_NO ASC -->
+		SELECT * FROM PRODUCT 
+	</select>
+
+	<!-- 전체 건수 조회 -->
+	<select id="productlist_totalCount" resultType="int">
+		SELECT
+		COUNT(P_NO) FROM PRODUCT
+	</select>
+	
+	<!-- 전체 건수 조회 -->
+	<select id="productlist_cate_totalCount"  parameterType="String" resultType="int">
+		SELECT
+		COUNT(*) FROM PRODUCT WHERE P_CATEGORY = #{p_category }
+	</select>
+
+	<!-- 페이지에 표시할 게시글 조회 -->
+	<select id="product_list" resultType="com.foy.vo.ProductVO">
+		SELECT * FROM (SELECT
+		ROWNUM R_NUM, P.*
+		FROM (SELECT * FROM PRODUCT ORDER BY P_NO DESC) P)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+	
+	<!-- 페이지에 표시할 게시글 조회 -->
+	<select id="product_cate_list" resultType="com.foy.vo.ProductVO">
+		SELECT * FROM (SELECT
+		ROWNUM R_NUM, P.*
+		FROM (SELECT * FROM PRODUCT WHERE P_CATEGORY = #{p_category} ORDER BY P_NO DESC) P)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+	
+	<!-- 페이지에 표시할 게시글 조회 -->
+	<select id="product_search_list" resultType="com.foy.vo.ProductVO">
+		SELECT * FROM (SELECT
+		ROWNUM R_NUM, P.*
+		FROM (SELECT * FROM PRODUCT WHERE P_CONTENT LIKE ('%' || #{p_search } || '%') OR  P_NAME LIKE ('%' || #{p_search } || '%') ORDER BY P_NO DESC) P)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+
+	<!--특정 물건 정보 -->
+	<select id="productOne" resultType="com.foy.vo.ProductVO"
+		parameterType="String">
+		SELECT * FROM PRODUCT WHERE P_NO = #{p_no}
+	</select>
+
+	<!-- 물건고유번호 지정을 위해 기존의 각 카테고리별 고유 번호 존재 여부 확인 있으면 새로운 번호 지정을 위해 -->
+	<select id="getPno" resultType="int" parameterType="String">
+		SELECT
+		COUNT(*) FROM PRODUCT WHERE P_CATEGORY = #{p_category}
+	</select>
+
+	<select id="exitsgetPno" resultType="String"
+		parameterType="String">
+		SELECT DISTINCT P_NO FROM PRODUCT WHERE P_CATEGORY =
+		#{p_category} ORDER BY P_NO ASC
+	</select>
+
+	<!-- 카테고리 목록 조회 -->
+	<select id="getCategory" resultType="String">
+		SELECT CATEGORY_NAME FROM
+		CATEGORY
+	</select>
+
+	<!-- 카테고리의 고유 태그 이름 조회 예) SC_, MK_ ... -->
+	<select id="getCategoryIDX" resultType="String"
+		parameterType="String">
+		SELECT CATE_IDX FROM CATEGORY WHERE CATEGORY_NAME =
+		#{category_name}
+	</select>
+
+
+	<!-- 상품 정보 업데이트(수정) -->
+	<update id="updateProduct" parameterType="com.foy.vo.ProductVO">
+		UPDATE PRODUCT SET
+		P_CONTENT = #{p_content} , P_NAME = #{p_name}, P_PRICE = #{p_price},
+		P_SALEPRICE = #{p_saleprice}, P_SALERATE = #{p_salerate}, P_ORI_IMAGE
+		= #{p_ori_image}, P_NEW_IMAGE = #{p_new_image}
+		WHERE P_NO = #{p_no}
+	</update>
+
+	<!-- 상품 삭제 -->
+	<delete id="deleteProduct" parameterType="String">
+		DELETE FROM PRODUCT
+		WHERE P_NO = #{p_no}
+	</delete>
+
+	<!-- 상품 옵션 리스트 저장 -->
+	<insert id="addOpt" parameterType="com.foy.vo.ProductOptVO">
+		INSERT INTO P_OPTION VALUES
+		(#{p_no}, #{p_op_content}, #{p_op_cnt}, #{p_op_no})
+	</insert>
+
+	<!-- 상품 옵션 리스트 불러오기 -->
+	<select id="optList" parameterType="String"
+		resultType="com.foy.vo.ProductOptVO">
+		SELECT * FROM P_OPTION WHERE P_NO = #{p_no}
+	</select>
+	
+	<!-- 상품 옵션 리스트 불러오기 -->
+	<select id="optList_no" resultType="String">
+		SELECT P_OP_NO FROM P_OPTION WHERE P_OP_CONTENT = #{p_op_content} AND P_NO = #{p_no}
+	</select>
+
+	<!-- 상품 옵션 리스트 불러오기 -->
+	<select id="optname" parameterType="String" resultType="String">
+		SELECT
+		P_OP_CONTENT FROM P_OPTION WHERE P_NO = #{p_no}
+	</select>
+
+	<!-- 상품 옵션 업데이트 -->
+	<update id="optupdate" parameterType="com.foy.vo.ProductOptVO">
+		UPDATE P_OPTION SET
+		P_OP_CONTENT = #{p_op_content} WHERE P_OP_NO = #{p_op_no} AND P_NO = #{p_no}
+	</update>
+
+	<!-- 상품정보에 딸린 댓글!!! 임시로!! -->
+	<select id="product_commList"
+		resultType="com.foy.vo.ProductOptVO" parameterType="String">
+		SELECT * FROM
+		COMMENT_T
+		WHERE P_NO = #{p_no}
+		ORDER BY C_IDX DESC
+	</select>
+
+	<!-- 댓글 입력(COMMENT_T) -->
+	<insert id="c_insert" parameterType="com.foy.vo.AnsVO">
+		INSERT INTO COMMENT_T
+		(C_IDX, WRITER, CONTENT, PWD, WRITE_DATE, B_IDX, P_NO)
+		VALUES
+		(COMMENT_T_SEQ.NEXTVAL,
+		#{writer}, #{content}, #{pwd}, SYSDATE, #{b_idx}, #{p_no})
+	</insert>
+
+	<!-- 댓글 삭제(COMMENT_T) -->
+	<delete id="c_delete" parameterType="String">
+		DELETE FROM COMMENT_T WHERE
+		C_IDX = #{c_idx}
+	</delete>
+
+	<!-- 댓글 페이지 조회(COMMENT_T) -->
+	<select id="c_idx" resultType="com.foy.vo.AnsVO">
+		SELECT *
+		FROM (SELECT ROWNUM R_NUM, C.*
+		FROM (SELECT *
+		FROM COMMENT_T
+		ORDER BY C_IDX DESC
+		) C
+		)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+	<!-- 게시판에 따른 댓글 페이지 조회(COMMENT_T) -->
+	<select id="board_c_idx" resultType="com.foy.vo.AnsVO"
+		parameterType="Map">
+		SELECT C_IDX
+		,WRITER
+		,CONTENT
+		,PWD
+		,WRITE_DATE
+		,B_IDX
+		,P_NO
+		FROM (SELECT ROWNUM R_NUM, C.*
+		FROM (SELECT *
+		FROM COMMENT_T WHERE B_IDX = #{b_idx}
+		ORDER BY C_IDX DESC
+		) C
+		)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+	<!-- 전체 댓글 갯수 조회(COMMENT_T) -->
+	<select id="c_total_count" resultType="Integer">
+		SELECT COUNT(*)
+		FROM
+		COMMENT_T
+	</select>
+
+	<!-- 게시글에 해당하는 댓글 건수 조회 -->
+	<select id="c_b_totalCount" resultType="int">
+		SELECT COUNT(*) FROM
+		COMMENT_T WHERE B_IDX = #{b_idx}
+	</select>
+
+	<!-- 댓글 수정 -->
+	<update id="update" parameterType="com.foy.vo.AnsVO">
+		UPDATE COMMENT_T
+		SET WRITER =
+		#{writer},
+		CONTENT = #{content},
+		PWD = #{pwd},
+		WRITE_DATE = SYSDATE
+		WHERE C_IDX = #{c_idx }
+	</update>
+	
+	
+	<!-- 개인정보 수정 -->
+	<update id="cus_update" parameterType="com.foy.vo.CustomerVO">
+		UPDATE CUSTOMER
+		SET USER_PW = #{user_pw },
+		USER_NAME = #{user_name },
+		USER_ADDR = #{user_addr },
+		USER_PHONE = #{user_phone },
+		USER_EMAIL = #{user_email },
+		USER_GRADE = #{user_grade },
+		USER_POINT = #{user_point },
+		USER_COUPON_CNT = #{user_coupon_cnt },
+		USER_TOT_PUR = #{user_tot_pur }
+		WHERE USER_ID = #{user_id }
+	</update>
+
+	<!-- 회원 탈퇴 (CUSTOMER) -->
+	<delete id="cus_delete" parameterType="String">
+		DELETE FROM CUSTOMER WHERE
+		USER_ID = #{user_id}
+	</delete>
+	
+	
+		<!-- 상품 장바구니에 담기  -->
+	<insert id = "addproduct" parameterType="com.foy.vo.CartVO">
+		INSERT INTO CART VALUES (#{user_id} , #{p_no} , #{cart_price} ,
+		#{cart_image}, #{cart_cnt}, CART_SEQ.NEXTVAL, #{cart_tot_price},#{p_name},#{p_saleprice}, #{p_opt_name}, #{p_opt_no} )
+	</insert>
+	
+	<!-- 상품 장바구니 보기 -->
+	<select id = "cartlist" resultType="com.foy.vo.CartVO" parameterType="String">
+		SELECT * FROM CART WHERE USER_ID = #{user_id}
+	</select>
+	
+	<!-- 장바구니 동일 제품에 수량 세기 -->
+	<select id="productcnt" resultType="int" parameterType="map">
+		SELECT CART_CNT FROM CART WHERE USER_ID = #{user_id} AND P_NO = #{p_no} AND P_OPT_NO = #{p_opt_no}
+	</select>
+	
+	<!-- 장바구니에 동일한 상품이 존재하면 합치기 -->
+	<update id = "updatecnt">
+		UPDATE CART SET CART_CNT = CART_CNT + 1
+			WHERE USER_ID = #{user_id}
+			AND P_NO = #{p_no} AND P_OPT_NO = #{p_opt_no}
+	</update>
+	
+	<!-- 장바구니 삭제-->
+	<delete id = "deletecart" parameterType="String">
+		DELETE FROM CART WHERE CART_IDX= #{cart_idx}
+	</delete>
+	 
+	<!-- 장바구니 총 합계 금액  -->
+	<select id="totalprice" resultType="int">
+	  	SELECT NVL(SUM(P_SALEPRICE * CART_CNT),0)CART_PRICE
+			FROM CART
+		WHERE USER_ID = #{user_id}
+	</select>
+	
+	<!-- 장바구니 수량 수정('%' || #{keyword} || '%')-->
+	<update id="modifycart" parameterType="com.foy.vo.CartVO">
+		UPDATE CART SET CART_CNT = #{cart_cnt}, CART_TOT_PRICE = P_SALEPRICE * #{cart_cnt}
+			WHERE USER_ID = #{user_id}
+			AND P_NO = #{p_no}
+			AND CART_IDX = #{cart_idx}
+	</update>
+	
+	<!-- 장바구니 수량에 대한 단가 금액-->
+	<select id="cntprice" resultType="int">
+	  	SELECT SUM(P_SALEPRICE * CART_CNT)CART_PRICE
+			FROM CART
+		WHERE P_NO = #{p_no}
+	</select>
+	
+	<!-- 수량 단가 업데이트 -->
+	<update id="cntpriceupdate" parameterType="String">
+	 UPDATE CART SET CART_TOT_PRICE = P_SALEPRICE * CART_CNT	
+	 	WHERE P_NO = #{p_no} AND P_OPT_NO = #{p_opt_no}
+	</update> 
+
+	<!-- 쿠폰, 적립금 사용하기 -->
+	<update id="use_coupon_point" parameterType="com.foy.vo.CustomerVO">
+		UPDATE CUSTOMER
+		SET USER_COUPON_CNT = #{user_coupon_cnt},
+		USER_POINT = #{user_point },
+		USER_TOT_PUR = #{user_tot_pur }
+		WHERE USER_ID = #{user_id }
+	</update>
+	
+	<!-- 등급 조정 -->
+	<update id="updateGrade">
+		UPDATE CUSTOMER
+		SET USER_COUPON_CNT = USER_COUPON_CNT + #{user_coupon_cnt},
+		USER_GRADE = #{user_grade }
+		WHERE USER_ID = #{user_id }
+	</update>
+
+	<!-- 결제 정보 저장 -->
+	<insert id="bill" parameterType="com.foy.vo.PayVO">
+		INSERT INTO PAY
+		(PAY_ID, PAY_TOT_PRICE, PAY_DATE, USER_ID, PAY_P_NAME, USER_PAYMENT, USER_NAME, USER_ADDR, USER_PHONE)
+		VALUES (PAY_SEQ.NEXTVAL, #{pay_tot_price }, SYSDATE, #{user_id }, #{pay_p_name }, #{user_payment }, #{user_name}, #{user_addr}, #{user_phone})
+	</insert>
+	
+	<!-- 결제 후 장바구니 삭제-->
+	<delete id = "pay_deletecart" parameterType="String">
+		DELETE FROM CART WHERE USER_ID = #{user_id}
+	</delete>
+	
+	<!-- 영수증 정보 불러오기 -->
+	<select id="bill_info" parameterType="String" resultType="com.foy.vo.PayVO">
+		SELECT * FROM PAY
+		WHERE USER_ID = #{user_id}
+	</select>
+	
+		<!-- 메인페이지 카테고리(Product) -->
+	<select id="list" resultType="com.foy.vo.ProductVO">
+		SELECT *
+		FROM PRODUCT
+		WHERE P_CATEGORY = #{p_category }
+	</select>
+	
+	<!-- 메인페이지 검색(Product) -->
+	<select id="search_list" resultType="com.foy.vo.ProductVO">
+		SELECT *
+		FROM PRODUCT
+		WHERE P_CONTENT LIKE ('%' || #{p_search } || '%') OR  P_NAME LIKE ('%' || #{p_search } || '%')
+	</select>
+	<!-- 메인페이지 검색(Product) -->
+	<select id="search_list_cnt" resultType="int">
+		SELECT COUNT(*)
+		FROM PRODUCT
+		WHERE P_CONTENT LIKE ('%' || #{p_search } || '%') OR  P_NAME LIKE ('%' || #{p_search } || '%')
+	</select>
+	
+	<update id="update_L_B" parameterType="map">
+		UPDATE BOARD SET GOOD = #{good} , BAD = #{bad} WHERE B_IDX = #{b_idx}
+	</update>
+	
+	<!-- 상품리스트 동적검색(idx, keyword) -->
+	<select id="tot_search" resultType="com.foy.vo.ProductVO"
+			parameterType="Map">
+		SELECT *
+ 		  FROM PRODUCT
+ 		<choose>
+ 			<when test="idx==0"><!-- 카테고리 -->
+ 		 		WHERE CATEGORY = #{keyword}
+ 		 	</when>
+ 		 	<when test="idx==1"><!-- 물건명 -->
+		 		WHERE P_NAME LIKE ('%' || #{keyword } || '%')
+				   
+ 		 	</when>
+ 		 	<when test="idx==2"><!-- 상품코드 -->
+ 		 		WHERE P_NO = UPPER(#{keyword})
+ 		 	</when>
+		</choose> 
+	</select>
+	
+	
+	<!-- 페이지에 표시할 게시글 조회 
+	<select id="product_search_list" resultType="com.foy.vo.ProductVO">
+		SELECT * FROM (SELECT
+		ROWNUM R_NUM, P.*
+		FROM (SELECT * FROM PRODUCT WHERE P_CONTENT LIKE ('%' || #{p_search } || '%') OR  P_NAME LIKE ('%' || #{p_search } || '%') ORDER BY P_NO DESC) P)
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>-->
+</mapper>  
+
+
+
+
+
+
