@@ -14,5 +14,3 @@
 ### ERD
 ![erd](https://github.com/dindine/forever-young/blob/master/images/db_erd.png?raw=true)
 
-###Main Page
-![z](https://github.com/dindine/forever-young/blob/master/images/z.jpg)
